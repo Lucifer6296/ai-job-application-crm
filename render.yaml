@@ -44,11 +44,10 @@ services:
         fromService:
           type: web
           name: jobtracker-backend
-          property: url
+          property: host
 
 databases:
   # ── 3. PostgreSQL Database ─────────────────────────────────────────────
   - name: jobtracker-db
     databaseName: jobtracker
-    user: postgres
     plan: free
