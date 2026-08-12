@@ -1,4 +1,4 @@
-package com.tamal.Jobtracker;
+package com.tamal.jobtracker;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
