@@ -42,10 +42,7 @@ services:
     plan: free
     envVars:
       - key: BACKEND_URL
-        fromService:
-          type: web
-          name: jobtracker-backend
-          property: url
+        value: https://jobtracker-backend.onrender.com
 
 databases:
   # ── 3. PostgreSQL Database ─────────────────────────────────────────────
