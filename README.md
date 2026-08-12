@@ -261,12 +261,6 @@ ai-job-application-crm/
 
 ---
 
-## 📄 License
-
-This project is open source and available under the [MIT License](LICENSE).
-
----
-
 <div align="center">
   Made with ❤️ by <a href="https://github.com/Lucifer6296">Lucifer6296</a>
 </div>
