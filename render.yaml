@@ -5,6 +5,10 @@ services:
     runtime: docker
     dockerfilePath: ./Dockerfile
     plan: free
+    disk:
+      name: uploads-disk
+      mountPath: /app/uploads
+      sizeGB: 1
     envVars:
       - key: DB_HOST
         fromDatabase:
@@ -33,18 +37,20 @@ services:
       - key: MAIL_PASSWORD
         value: cjpx fgrt pfrz hjjo
 
-  # ── 2. React Frontend Service (Nginx Proxy) ───────────────────────────
+  # ── 2. React Frontend Service (Nginx) ─────────────────────────────────
   - type: web
     name: jobtracker-frontend
     runtime: docker
     dockerfilePath: ./frontend/Dockerfile
     plan: free
-    envVars:
+    dockerContext: ./frontend
+    dockerCommand: ""
+    buildArgs:
       - key: VITE_API_BASE_URL
         fromService:
           type: web
           name: jobtracker-backend
-          property: host
+          property: url
 
 databases:
   # ── 3. PostgreSQL Database ─────────────────────────────────────────────
