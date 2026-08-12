@@ -1,31 +1,21 @@
 services:
   # ── 1. Spring Boot Backend Service ─────────────────────────────────────
   - type: web
-    name: jobtracker-backend
+    name: jobtracker-backend-egb5
     runtime: docker
     dockerfilePath: ./Dockerfile
     plan: free
     envVars:
       - key: DB_HOST
-        fromDatabase:
-          name: jobtracker-db
-          property: host
+        sync: false
       - key: DB_PORT
-        fromDatabase:
-          name: jobtracker-db
-          property: port
+        value: "5432"
       - key: POSTGRES_DB
-        fromDatabase:
-          name: jobtracker-db
-          property: database
+        sync: false
       - key: POSTGRES_USER
-        fromDatabase:
-          name: jobtracker-db
-          property: user
+        sync: false
       - key: POSTGRES_PASSWORD
-        fromDatabase:
-          name: jobtracker-db
-          property: password
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: MAIL_USERNAME
@@ -35,7 +25,7 @@ services:
 
   # ── 2. React Frontend Service (Nginx) ─────────────────────────────────
   - type: web
-    name: jobtracker-frontend
+    name: jobtracker-frontend-egb5
     runtime: docker
     dockerfilePath: ./frontend/Dockerfile
     dockerContext: ./frontend
@@ -43,9 +33,3 @@ services:
     envVars:
       - key: BACKEND_URL
         value: https://jobtracker-backend-egb5.onrender.com
-
-databases:
-  # ── 3. PostgreSQL Database ─────────────────────────────────────────────
-  - name: jobtracker-db
-    databaseName: jobtracker
-    plan: free
