@@ -34,6 +34,7 @@ export default function Register() {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
+    let enteredWakingUp = false;
     try {
       await authApi.register({
         fullName: form.fullName,
@@ -44,15 +45,62 @@ export default function Register() {
       navigate('/login');
     } catch (err: unknown) {
       const status = (err as { response?: { status: number } })?.response?.status;
-      if (status === 400) {
-        toast.error('This email may already be registered.');
+      const isNetworkError = !(err as { response?: unknown })?.response;
+
+      if (status === 400 || status === 409) {
+        // 400: email already exists (our backend), 409: conflict
+        toast.error('This email is already registered. Please sign in instead.');
+      } else if (status === 500) {
+        toast.error('Server error. Please try again later.');
+      } else if (status === 502 || status === 503 || status === 504) {
+        // Nginx gateway error — backend cold-starting on Render free tier
+        enteredWakingUp = true;
+        setLoading(false);
+        toast('Server is waking up. Retrying in 15 seconds…', {
+          icon: '⏳',
+          duration: 14000,
+          style: { background: '#1e293b', color: '#fbbf24', borderRadius: '0.75rem' },
+        });
+        setTimeout(async () => {
+          setLoading(true);
+          try {
+            await authApi.register({ fullName: form.fullName, email: form.email, password: form.password });
+            toast.success('Account created! Please sign in.');
+            navigate('/login');
+          } catch {
+            toast.error('Server is still starting. Please try again in a moment.');
+          } finally {
+            setLoading(false);
+          }
+        }, 15000);
+      } else if (isNetworkError) {
+        enteredWakingUp = true;
+        setLoading(false);
+        toast('Server is waking up. Retrying in 15 seconds…', {
+          icon: '⏳',
+          duration: 14000,
+          style: { background: '#1e293b', color: '#fbbf24', borderRadius: '0.75rem' },
+        });
+        setTimeout(async () => {
+          setLoading(true);
+          try {
+            await authApi.register({ fullName: form.fullName, email: form.email, password: form.password });
+            toast.success('Account created! Please sign in.');
+            navigate('/login');
+          } catch {
+            toast.error('Server is still starting. Please try again in a moment.');
+          } finally {
+            setLoading(false);
+          }
+        }, 15000);
       } else {
         toast.error('Something went wrong. Please try again.');
       }
     } finally {
-      setLoading(false);
+      if (!enteredWakingUp) setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-brand-900 flex items-center justify-center p-4">

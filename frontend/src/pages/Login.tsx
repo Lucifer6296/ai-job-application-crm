@@ -45,10 +45,11 @@ export default function Login() {
     } catch (err: unknown) {
       const status = (err as { response?: { status: number } })?.response?.status;
       const isNetworkError = !(err as { response?: unknown })?.response;
+      const isColdStart = isNetworkError || status === 502 || status === 503 || status === 504;
 
       if (status === 401 || status === 400) {
         toast.error('Invalid email or password.');
-      } else if (isNetworkError) {
+      } else if (isColdStart) {
         // Render free tier: backend is cold-starting, retry automatically
         enteredWakingUp = true;
         setWakingUp(true);
@@ -75,6 +76,7 @@ export default function Login() {
       if (!enteredWakingUp) setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-brand-900 flex items-center justify-center p-4">
