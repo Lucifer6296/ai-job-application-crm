@@ -5,7 +5,7 @@ import { authApi } from '../api/authApi';
 import { useAuth } from '../hooks/useAuth';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
-import { Mail, Lock, Zap } from 'lucide-react';
+import { Mail, Lock, Zap, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { storage } from '../utils/storage';
 
@@ -13,6 +13,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [wakingUp, setWakingUp] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -30,6 +31,8 @@ export default function Login() {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
+    setWakingUp(false);
+    let enteredWakingUp = false;
     try {
       const token = await authApi.login({ email, password });
       // 1. Store in localStorage first (synchronous)
@@ -41,13 +44,35 @@ export default function Login() {
       navigate('/dashboard', { replace: true });
     } catch (err: unknown) {
       const status = (err as { response?: { status: number } })?.response?.status;
+      const isNetworkError = !(err as { response?: unknown })?.response;
+
       if (status === 401 || status === 400) {
         toast.error('Invalid email or password.');
+      } else if (isNetworkError) {
+        // Render free tier: backend is cold-starting, retry automatically
+        enteredWakingUp = true;
+        setWakingUp(true);
+        setLoading(false);
+        setTimeout(async () => {
+          setWakingUp(false);
+          setLoading(true);
+          try {
+            const token = await authApi.login({ email, password });
+            storage.setToken(token);
+            login(token);
+            toast.success('Welcome back!');
+            navigate('/dashboard', { replace: true });
+          } catch {
+            toast.error('Server is still starting. Please try again in a moment.');
+          } finally {
+            setLoading(false);
+          }
+        }, 15000);
       } else {
         toast.error('Something went wrong. Please try again.');
       }
     } finally {
-      setLoading(false);
+      if (!enteredWakingUp) setLoading(false);
     }
   };
 
@@ -62,6 +87,14 @@ export default function Login() {
           <h1 className="text-2xl font-bold text-white">Welcome back</h1>
           <p className="text-slate-400 text-sm mt-1">Sign in to your JobTracker account</p>
         </div>
+
+        {/* Waking up banner */}
+        {wakingUp && (
+          <div className="mb-4 flex items-center gap-3 bg-amber-500/10 border border-amber-500/30 text-amber-300 rounded-2xl px-4 py-3 text-sm">
+            <Loader2 size={16} className="animate-spin shrink-0" />
+            <span>Server is waking up on Render's free tier. Retrying automatically in ~15s…</span>
+          </div>
+        )}
 
         {/* Card */}
         <div className="bg-white rounded-3xl shadow-2xl p-8">
@@ -91,10 +124,11 @@ export default function Login() {
             <Button
               type="submit"
               loading={loading}
+              disabled={wakingUp}
               className="w-full justify-center mt-2"
               id="login-submit-btn"
             >
-              Sign in
+              {wakingUp ? 'Waking up server…' : 'Sign in'}
             </Button>
           </form>
 
